@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.sky.annotation.AutoFill;
 import com.sky.entity.Setmeal;
 import com.sky.enumeration.OperationType;
+import com.sky.vo.DishItemVO;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -47,4 +48,14 @@ public interface SetmealMapper extends BaseMapper<Setmeal>{
     @AutoFill(value = OperationType.UPDATE)
     @Update("update setmeal set status = #{status},update_user = #{updateUser},update_time = #{updateTime} where id = #{id}")
     void startOrStop(Setmeal setmeal);
+
+    /**
+     * 根据套餐id查询菜品选项
+     * @param setmealId
+     * @return
+     */
+    @Select("select sd.name, sd.copies, d.image, d.description " +
+            "from setmeal_dish sd left join dish d on sd.dish_id = d.id " +
+            "where sd.setmeal_id = #{setmealId}")
+    List<DishItemVO> getDishItemBySetmealId(Long setmealId);
 }

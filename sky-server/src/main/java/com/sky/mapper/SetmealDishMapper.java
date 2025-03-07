@@ -1,5 +1,6 @@
 package com.sky.mapper;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.sky.entity.SetmealDish;
@@ -12,11 +13,11 @@ public interface SetmealDishMapper extends BaseMapper<SetmealDish> {
 
     /**
      * 根据菜品id查询套餐id
-     * @param dishIds
+     * @param queryWrapper
      * @return
      */
-    @Select("select setmeal_id from setmeal_dish where dish_id in #{dishIds}")
-    List<Long> getSetmealIdsByDishIds(@Param("dishIds") List<Long> dishIds);
+    //被selectObjs取代
+    /*List<Long> getSetmealIdsByDishIds(Wrapper queryWrapper);*/
 
     /**
      * 根据菜品id查询套餐中的菜品
@@ -30,7 +31,8 @@ public interface SetmealDishMapper extends BaseMapper<SetmealDish> {
      * 批量插入套餐菜品关系
      * @param list
      */
-    @Insert({
+    //被insert取代
+    /*@Insert({
             "<script>",
             "INSERT INTO setmeal_dish (setmeal_id, dish_id, name, price, copies) VALUES ",
             "<foreach collection='list' item='sd' separator=','>",
@@ -38,7 +40,7 @@ public interface SetmealDishMapper extends BaseMapper<SetmealDish> {
             "</foreach>",
             "</script>"
     })
-    void saveByList(List<SetmealDish> list);
+    void saveByList(List<SetmealDish> list);*/
 
     /**
      * 根据套餐id查询套餐菜品关系

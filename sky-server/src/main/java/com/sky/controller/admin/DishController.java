@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController
+@RestController("adminDishController")
 @RequestMapping("/admin/dish")
 @Api(tags = "菜品管理相关接口")
 @Slf4j
@@ -96,6 +96,21 @@ public class DishController {
     public Result update(@RequestBody DishDTO dishDTO) {
         log.info("修改菜品:{}", dishDTO);
         dishService.updateWithFlavor(dishDTO);
+        return Result.success();
+    }
+
+    /**
+     * 菜品起售停售
+     *
+     * @param status
+     * @param id
+     * @return
+     */
+    @PostMapping("/status/{status}")
+    @ApiOperation("菜品起售停售")
+    public Result<String> startOrStop(@PathVariable Integer status, Long id) {
+        dishService.startOrStop(status, id);
+
         return Result.success();
     }
 }

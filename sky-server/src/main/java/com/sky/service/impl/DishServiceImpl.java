@@ -11,12 +11,14 @@ import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
+import com.sky.entity.Setmeal;
 import com.sky.entity.SetmealDish;
 import com.sky.enumeration.OperationType;
 import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.DishFlavorMapper;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealDishMapper;
+import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
@@ -26,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -41,6 +44,8 @@ public class DishServiceImpl implements DishService {
     @Autowired
     private SetmealDishMapper setmealDishMapper;
 
+    @Autowired
+    private SetmealMapper setmealMapper;
     /**
      * 新增菜品和对应口味
      * @param dishDTO
@@ -78,6 +83,10 @@ public class DishServiceImpl implements DishService {
         return new PageResult(page.getTotal(), page.getResult());
     }
 
+    /**
+     * 批量删除菜品
+     * @param ids
+     */
     @Transactional
     @Override
     public void deleteBatch(List<Long> ids) {
@@ -90,7 +99,10 @@ public class DishServiceImpl implements DishService {
             }
         }
         // 判断菜品是否关联套餐
-        List<Long> setmealIds = setmealDishMapper.getSetmealIdsByDishIds(ids);
+        LambdaQueryWrapper<SetmealDish> queryWrapper = new LambdaQueryWrapper<SetmealDish>()
+                .select(SetmealDish::getSetmealId)
+                .in(SetmealDish::getDishId, ids);
+        List<Long> setmealIds = setmealDishMapper.selectObjs(queryWrapper);
         if(!setmealIds.isEmpty()){
             // 当前菜品有套餐关联，不能删除
             throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
@@ -160,5 +172,65 @@ public class DishServiceImpl implements DishService {
         return list;
     }
 
+    /**
+     * 根据条件查询菜品和口味
+     * @param dish
+     * @return
+     */
+    @Override
+    public List<DishVO> listWithFlavor(Dish dish) {
+        List<Dish> dishList = dishMapper.list(dish);
 
+        List<DishVO> dishVOList = new ArrayList<>();
+
+        for (Dish d : dishList) {
+            DishVO dishVO = new DishVO();
+            BeanUtils.copyProperties(d,dishVO);
+
+            //根据菜品id查询对应的口味
+            List<DishFlavor> flavors = dishFlavorMapper.getByDishId(d.getId());
+
+            dishVO.setFlavors(flavors);
+            dishVOList.add(dishVO);
+        }
+
+        return dishVOList;
+    }
+
+    /**
+     * 菜品起售停售
+     *
+     * @param status
+     * @param id
+     */
+    @Transactional
+    @Override
+    public void startOrStop(Integer status, Long id) {
+        Dish dish = Dish.builder()
+                .id(id)
+                .status(status)
+                .build();
+        dishMapper.update(dish);
+
+        if (status == StatusConstant.DISABLE) {
+            // 如果是停售操作，还需要将包含当前菜品的套餐也停售
+            List<Long> dishIds = new ArrayList<>();
+            dishIds.add(id);
+
+            LambdaQueryWrapper<SetmealDish> queryWrapper = new LambdaQueryWrapper<SetmealDish>()
+                    .select(SetmealDish::getSetmealId)
+                    .in(SetmealDish::getDishId, dishIds);
+            List<Long> setmealIds = setmealDishMapper.selectObjs(queryWrapper);
+            if (!setmealIds.isEmpty()) {
+                log.info("当前菜品关联的套餐id：{}", setmealIds);
+                for (Long setmealId : setmealIds) {
+                    Setmeal setmeal = Setmeal.builder()
+                            .id(setmealId)
+                            .status(StatusConstant.DISABLE)
+                            .build();
+                    setmealMapper.updateById(setmeal);
+                }
+            }
+        }
+    }
 }

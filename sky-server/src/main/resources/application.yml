@@ -36,11 +36,20 @@ logging:
 sky:
   jwt:
     # 设置jwt签名加密时使用的秘钥
-    admin-secret-key: itcast
-    # 设置jwt过期时间
+    admin-secret-key: blankspacez
+    # 设置jwt过期时间,2小时
     admin-ttl: 7200000
     # 设置前端传递过来的令牌名称
     admin-token-name: token
+    # 设置jwt签名加密时使用的秘钥
+    user-secret-key: b1anksp4cez
+    # 设置jwt过期时间
+    user-ttl: 7200000
+    # 设置前端传递过来的令牌名称
+    user-token-name: authentication
+  wechat:
+    appid: ${sky.wechat.appid}
+    secret: ${sky.wechat.secret}
 
 nginx:
   url: "D:\\Nginx\\sky\\html\\sky\\images\\"
