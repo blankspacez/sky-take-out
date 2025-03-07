@@ -10,9 +10,11 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController("adminDishController")
 @RequestMapping("/admin/dish")
@@ -23,8 +25,12 @@ public class DishController {
     @Autowired
     private DishService dishService;
 
+    @Autowired
+    private RedisTemplate redisTemplate;
+
     /**
      * 新增菜品
+     * 需要清理redis缓存
      * @param dishDTO
      * @return
      */
@@ -33,6 +39,10 @@ public class DishController {
     public Result save(@RequestBody DishDTO dishDTO) {
         log.info("新增菜品");
         dishService.saveWithFlavor(dishDTO);
+
+        // 清理redis缓存
+        String redisKey = "dish_" + dishDTO.getCategoryId() ;
+        cleanCache(redisKey);
         return Result.success();
     }
 
@@ -51,6 +61,7 @@ public class DishController {
 
     /**
      * 删除菜品，可以删除多个，多个删除用逗号隔开
+     * 需要清理redis缓存
      * @param ids
      * @return
      */
@@ -59,6 +70,9 @@ public class DishController {
     public Result delete(@RequestParam List<Long> ids) {
         log.info("删除菜品:{}", ids);
         dishService.deleteBatch(ids);
+
+        // 清理redis缓存,直接清理所有以dish_开头的key
+        cleanCache("dish_*");
         return Result.success();
     }
 
@@ -88,6 +102,7 @@ public class DishController {
 
     /**
      * 修改菜品
+     * 需要清理redis缓存
      * @param dishDTO
      * @return
      */
@@ -96,12 +111,16 @@ public class DishController {
     public Result update(@RequestBody DishDTO dishDTO) {
         log.info("修改菜品:{}", dishDTO);
         dishService.updateWithFlavor(dishDTO);
+
+        // 清理redis缓存,直接清理所有以dish_开头的key
+        cleanCache("dish_*");
+
         return Result.success();
     }
 
     /**
      * 菜品起售停售
-     *
+     * 需要清理redis缓存
      * @param status
      * @param id
      * @return
@@ -110,7 +129,17 @@ public class DishController {
     @ApiOperation("菜品起售停售")
     public Result<String> startOrStop(@PathVariable Integer status, Long id) {
         dishService.startOrStop(status, id);
-
+        // 清理redis缓存,直接清理所有以dish_开头的key
+        cleanCache("dish_*");
         return Result.success();
+    }
+
+    /**
+     * 清理缓存
+     */
+    private void cleanCache(String pattern) {
+        log.info("正在清理redis缓存...");
+        Set redisKeys = redisTemplate.keys(pattern);
+        redisTemplate.delete(redisKeys);
     }
 }
