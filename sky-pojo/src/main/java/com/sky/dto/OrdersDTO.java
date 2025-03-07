@@ -1,5 +1,7 @@
 package com.sky.dto;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.sky.entity.OrderDetail;
 import lombok.Data;
 import java.io.Serializable;
@@ -22,6 +24,7 @@ public class OrdersDTO implements Serializable {
     private Long userId;
 
     //地址id
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long addressBookId;
 
     //下单时间
