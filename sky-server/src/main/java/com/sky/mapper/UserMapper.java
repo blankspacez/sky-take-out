@@ -14,4 +14,12 @@ public interface UserMapper extends BaseMapper<User> {
      */
     @Select("select * from user where openid = #{openid}")
     User getByOpenid(String openid);
+
+    /**
+     * 根据id查询用户
+     * @param userId
+     * @return
+     */
+    @Select("select * from user where id = #{userId}")
+    User getById(Long userId);
 }
